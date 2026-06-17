@@ -1,0 +1,5 @@
+pyTelegramBotAPI
+requests
+faker
+beautifulsoup4
+requests-toolbelt
