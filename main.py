@@ -1,24 +1,25 @@
-import telebot, os
-import re, json
-import requests
-import time, random
-import string
+import telebot, os, re, json, requests, time, random, string, threading, queue
 from telebot import types
 from datetime import datetime, timedelta
 from faker import Faker
 from multiprocessing import Process
-import threading
-import queue 
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from requests_toolbelt import MultipartEncoder
 import base64
 
-# ================= [ إعدادات القناة والاشتراك ] =================
-# ⚠️ حط يوزر قناتك هنا بالـ @ ولازم ترفع البوت أدمن (مشرف) في القناة
+# ================= [ الإعدادات ] =================
 CHANNEL_USERNAME = "@ankabot6"
-# =============================================================
+# تأكد أن اسم المتغير في Railway هو BOT_TOKEN
+TOKEN = os.environ.get("BOT_TOKEN")
 
+if not TOKEN:
+    print("خطأ: يرجى ضبط متغير BOT_TOKEN في إعدادات Railway!")
+    exit(1)
+
+bot = telebot.TeleBot(TOKEN, parse_mode="HTML")
+admin = 8011795436
+# ... (باقي الثوابت E_001 إلى E_020 كما هي في كودك القديم)
 E_001 = "4956222745814762495"
 E_002 = "5945194134573685106"
 E_003 = "5945183830947142048"
