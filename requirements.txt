@@ -1,5 +1,2 @@
-pyTelegramBotAPI
-requests
-faker
-beautifulsoup4
-requests-toolbelt
+python-telegram-bot
+pandas
