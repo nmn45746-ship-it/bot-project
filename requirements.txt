@@ -1,2 +1,7 @@
-pyrogram
-tgcrypto
+telethon
+aiohttp
+aiofiles
+motor
+pymongo
+dnspython
+psutil
