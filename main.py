@@ -42,7 +42,7 @@ async def main() -> None:
     setup_logging()
 
     bot = Bot(
-        token='8760199614:AAFIhoiT5tV3kJmbzcE6bBjKw_-ZzQn61-8',
+        token='8697979668:AAHp40jLFxYibXMJfz8PBg6J4siW8XYRoks',
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
