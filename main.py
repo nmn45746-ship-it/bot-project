@@ -1,85 +1,54 @@
-import os
-import sqlite3
-import pandas as pd
 import asyncio
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (Application, CommandHandler, MessageHandler, 
-                          CallbackQueryHandler, filters, ContextTypes)
+import os
+from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from dotenv import load_dotenv
 
-# إعداد السجلات لمتابعة أي أخطاء في الـ Logs
-logging.basicConfig(level=logging.INFO)
+# استيراد الراوترات (تأكد أن مساراتها صحيحة في مجلدك)
+from handlers.start import start_router
+from handlers.private import private_router
+from handlers.group import group_router
 
-# قراءة التوكن من متغيرات البيئة في الاستضافة
-TOKEN = os.getenv("BOT_TOKEN")
-TEMP_FILE = "/tmp/dump.csv"
-DB_FILE = "/tmp/cards.db"
+# تحميل التوكن من ملف .env
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS cards (country TEXT, data TEXT)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_country ON cards(country)')
-    conn.commit()
-    conn.close()
+def setup_logging() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
 
-def process_data_sync():
-    """معالجة الملف في الخلفية"""
-    conn = sqlite3.connect(DB_FILE)
-    # مسح البيانات القديمة
-    conn.execute('DELETE FROM cards')
-    # قراءة الملف وإضافته لقاعدة البيانات
-    df = pd.read_csv(TEMP_FILE)
-    df.to_sql('cards', conn, if_exists='append', index=False)
-    conn.commit()
-    conn.close()
+def setup_dispatcher() -> Dispatcher:
+    dp = Dispatcher(storage=MemoryStorage())
+    dp.include_routers(private_router, group_router, start_router)
+    return dp
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أهلاً بك! أرسل ملف الـ CSV للبدء.")
+async def main() -> None:
+    if not BOT_TOKEN:
+        raise ValueError("خطأ: لم يتم العثور على BOT_TOKEN في ملف .env")
+        
+    setup_logging()
 
-async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = await update.message.reply_text("⏳ جارٍ التحميل...")
-    
-    file = await update.message.document.get_file()
-    await file.download_to_drive(TEMP_FILE)
-    
-    await context.bot.edit_message_text(chat_id=update.message.chat_id, message_id=msg.message_id, text="⚙️ جارٍ المعالجة... يرجى الانتظار.")
-    
-    # تنفيذ المعالجة في الخلفية بدون تجميد البوت
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, process_data_sync)
-    
-    # جلب الإحصائيات بعد المعالجة
-    conn = sqlite3.connect(DB_FILE)
-    stats = pd.read_sql_query('SELECT country, COUNT(*) as count FROM cards GROUP BY country', conn)
-    conn.close()
-    
-    keyboard = [[InlineKeyboardButton(f"{r['country']} ({r['count']})", callback_data=r['country'])] for _, r in stats.iterrows()]
-    await context.bot.edit_message_text(chat_id=update.message.chat_id, message_id=msg.message_id, text="✅ تمت المعالجة! اختر الدولة:", reply_markup=InlineKeyboardMarkup(keyboard))
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
 
-async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer("جاري التجهيز...")
-    
-    conn = sqlite3.connect(DB_FILE)
-    result = pd.read_sql_query(f"SELECT * FROM cards WHERE country = '{query.data}'", conn)
-    conn.close()
-    
-    output_file = f"/tmp/{query.data}.csv"
-    result.to_csv(output_file, index=False)
-    
-    await query.message.reply_document(document=open(output_file, 'rb'))
+    dp = setup_dispatcher()
 
-def main():
-    init_db()
-    app = Application.builder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
-    app.add_handler(CallbackQueryHandler(button_click))
-    
-    print("البوت يعمل الآن...")
-    app.run_polling()
+    try:
+        logging.info("البوت يعمل الآن...")
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close()
+        logging.info("تم إيقاف البوت.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("تم إيقاف البوت يدوياً.")
