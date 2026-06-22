@@ -5,16 +5,14 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from dotenv import load_dotenv
-
-# استيراد الراوترات (تأكد أن مساراتها صحيحة في مجلدك)
+from handlers import private
+from handlers import group
+from handlers import start
 from handlers.start import start_router
 from handlers.private import private_router
 from handlers.group import group_router
+# from bot.handlers.game_actions import game_actions_router
 
-# تحميل التوكن من ملف .env
-load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 def setup_logging() -> None:
     logging.basicConfig(
@@ -22,33 +20,44 @@ def setup_logging() -> None:
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
+
+# def get_token() -> str:
+#     token = os.getenv("BOT_TOKEN")
+#     if not token:
+#         raise ValueError("BOT_TOKEN environment variable topilmadi")
+#     return token
+
+
 def setup_dispatcher() -> Dispatcher:
     dp = Dispatcher(storage=MemoryStorage())
-    dp.include_routers(private_router, group_router, start_router)
+    dp.include_router(private_router)
+    dp.include_router(group_router)
+    dp.include_router(start_router)
+    # dp.include_router(game_actions_router)
+
     return dp
 
+
 async def main() -> None:
-    if not BOT_TOKEN:
-        raise ValueError("خطأ: لم يتم العثور على BOT_TOKEN في ملف .env")
-        
     setup_logging()
 
     bot = Bot(
-        token=BOT_TOKEN,
+        token='8760199614:AAFIhoiT5tV3kJmbzcE6bBjKw_-ZzQn61-8',
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
 
     dp = setup_dispatcher()
 
     try:
-        logging.info("البوت يعمل الآن...")
+        logging.info("Bot ishga tushmoqda...")
         await dp.start_polling(bot)
     finally:
         await bot.session.close()
-        logging.info("تم إيقاف البوت.")
+        logging.info("Bot to'xtadi.")
+
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("تم إيقاف البوت يدوياً.")
+        print("Bot manual to'xtatildi.")
