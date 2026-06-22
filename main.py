@@ -37,7 +37,7 @@ from database import (
     add_proxy_db, get_all_user_proxies, get_proxy_count, get_random_proxy,
     remove_proxy_by_index, remove_proxy_by_url, clear_all_proxies,
     add_site_db, get_user_sites, remove_site_db,
-    save_card_to_db, get_total_cards_count, get_charged_count, get_approved_count,
+    get_total_cards_count, get_charged_count, get_approved_count,
     get_all_premium_users, get_total_users, get_premium_count,
     get_total_sites_count, get_users_with_sites, get_sites_per_user, get_all_sites_detail,
     mark_user_joined, is_user_marked_joined, remove_joined_mark
@@ -1768,7 +1768,7 @@ async def single_cc_check(event):
         elapsed = round(time.time() - st, 2)
         status = result.get('Status', 'Declined')
         if status in ["Charged", "Approved"]:
-            asyncio.create_task(save_card_to_db(card, status.upper(), result.get('Response', ''), result.get('Gateway', ''), result.get('Price', '')))
+            asyncio.create_task(card, status.upper(), result.get('Response', ''), result.get('Gateway', ''), result.get('Price', '')))
         msg, eid = format_simple_card_result(status, card, result.get('Gateway', '?'), result.get('Response', '')[:150], bi, elapsed, extra_field=("Price", result.get('Price', '-')) if result.get('Price', '-') != '-' else None)
         try: await lm.delete()
         except: pass
@@ -1814,7 +1814,7 @@ async def rz_single_check(event):
         elapsed = round(time.time() - st, 2)
         status = result.get('Status', 'Declined')
         if status in ["Charged", "Approved"]:
-            asyncio.create_task(save_card_to_db(card, status.upper(), result.get('Response', ''), 'RazorPay', '-'))
+            asyncio.create_task(card, status.upper(), result.get('Response', ''), 'RazorPay', '-')
         msg, eid = format_rz_single_result(status, card, 'RazorPay', result.get('Response', '')[:150], bi, elapsed)
         try: await lm.delete()
         except: pass
@@ -1888,11 +1888,12 @@ async def _run_mass_process(event, cards, proxies, send_approved, process_store,
                 if status == "Error": errors += 1
                 elif status == "Charged":
                     charged += 1; hits.append(f"{card} - CHARGED - {resp} - {gw}")
-                    asyncio.create_task(save_card_to_db(card, "CHARGED", resp, gw, result.get('Price', '-')))
+                    asyncio.create_task(
+                    (card, "CHARGED", resp, gw, result.get('Price', '-'))
                     asyncio.create_task(_send_mass_hit(card, result, status, uid, username, name, is_rz))
                 elif status == "Approved":
                     approved += 1; hits.append(f"{card} - APPROVED - {resp} - {gw}")
-                    asyncio.create_task(save_card_to_db(card, "APPROVED", resp, gw, result.get('Price', '-')))
+                    asyncio.create_task(card, "APPROVED", resp, gw, result.get('Price', '-'))
                     if send_approved:
                         asyncio.create_task(_send_mass_hit(card, result, status, uid, username, name, is_rz))
                 else: declined += 1
