@@ -1,13 +1,12 @@
-# 𝙍𝘼𝙕𝙊𝙍 𝙓 𝘽𝙤𝙩
-from telethon.errors import FloodWaitError
+import os
+import asyncio
 from telethon import TelegramClient, events, Button
+from telethon.errors import FloodWaitError
 from telethon.tl.types import MessageEntityCustomEmoji, ChannelParticipantBanned
 from telethon.tl.functions.channels import GetParticipantRequest
 from telethon.extensions import html as thtml
-import asyncio
 import aiohttp
 import aiofiles
-import os
 import random
 import time
 import json
