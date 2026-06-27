@@ -1,7 +1,3 @@
-telethon
-aiohttp
-aiofiles
-motor
-pymongo
-dnspython
-psutil
+python-telegram-bot==20.3
+httpx==0.24.1
+python-dotenv==1.0.0
